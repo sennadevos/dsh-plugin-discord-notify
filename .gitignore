@@ -1,0 +1,8 @@
+node_modules/
+package-lock.json
+*.log
+
+# Never commit a credential, even by accident.
+.env
+.env.*
+.credentials.yaml

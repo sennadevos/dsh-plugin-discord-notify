@@ -1,0 +1,23 @@
+# Bundle patch for dsh-plugin-discord-notify.
+#
+# Declared via `"dsh": { "bundle": { "patch": "./cordis.patch.yml" } }` in
+# package.json, so `dsh plugin --profile <name> add dsh-plugin-discord-notify`
+# wires this plugin as a profile layer automatically.
+#
+# Applied as a bundle layer, BEFORE the user's own cordis.patch.yml. Override
+# by targeting the `discord-notify` id in your patch layer — a config override
+# replaces the whole `config` object, so restate every key you want to keep.
+#
+# `targets` maps a short target name to the ENVIRONMENT VARIABLE NAME that
+# addresses its webhook URL. The URL itself is never stored here: it lives in
+# the credential store (`$DSH_HOME/.credentials.yaml`, the process
+# environment, or a .env layer), so this file stays safe to commit and sync.
+
+- insert:
+    - id: discord-notify
+      name: 'dsh-plugin-discord-notify'
+      config:
+        targets:
+          alerts:
+            urlEnv: DISCORD_WEBHOOK_ALERTS
+        defaultTarget: alerts
