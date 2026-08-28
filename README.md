@@ -34,7 +34,29 @@ dsh plugin --profile web add link:/path/to/dsh-plugin-discord-notify
 
 ## Configure a target
 
-Create a webhook in Discord under **Server Settings → Integrations → Webhooks**, copy its URL, then either set it where the credential provider will find it, or POST it to the plugin's own route:
+Create a webhook in Discord under **Server Settings → Integrations → Webhooks** and copy its URL. Then pick whichever of the three routes suits you — they all write to the same place, so you can mix them freely.
+
+### In the UI
+
+**Settings → General → Discord notifications.** Each configured target gets a row showing whether it is set, a write-only field to paste a URL into, and **Send test** / **Clear** buttons. A stored URL is never displayed again — the server reports only *whether* a target is configured — so pasting a new one replaces it.
+
+A target supplied by a read-only source (a live environment variable) renders as read-only rather than offering a write that would silently not take effect.
+
+### Deterministically, from a file
+
+For reproducible setups, put the URL in dsh's credential file — `$DSH_HOME/.credentials.yaml`, mode `0600`:
+
+```yaml
+version: 1
+refs:
+  DISCORD_WEBHOOK_ALERTS: https://discord.com/api/webhooks/…/…
+```
+
+The credential provider observes external edits, and references resolve per notification, so this takes effect without restarting dsh. An environment variable of the same name works identically and takes precedence (a target backed by one is then read-only in the UI, by design).
+
+The **target declaration** — names, `urlEnv`, `defaultTarget` — lives in the plugin's config in your `cordis.patch.yml`, which is ordinary version-controlled configuration. Together that means a machine is provisioned by writing two files and never clicking anything: the declaration in your dotfiles, the secret in the credential file.
+
+### Over HTTP
 
 ```sh
 curl -X POST http://127.0.0.1:3080/x-discord/target/alerts \
@@ -43,9 +65,10 @@ curl -X POST http://127.0.0.1:3080/x-discord/target/alerts \
 
 curl -X POST http://127.0.0.1:3080/x-discord/test/alerts   # send a test message
 curl http://127.0.0.1:3080/x-discord/targets               # status only, never values
+curl -X DELETE http://127.0.0.1:3080/x-discord/target/alerts
 ```
 
-These routes are **loopback-only**: they require a loopback `Host` header, and writes additionally require a local connection. dsh's browser-trust fence guards only paths under `/api`, so this prefix carries its own.
+These routes are **loopback-only**: they require a loopback `Host` header, and writes additionally require a local connection. dsh's browser-trust fence guards only paths under `/api`, so this prefix carries its own. The settings row above is a client of exactly these routes.
 
 ## The tool
 
@@ -86,9 +109,11 @@ npm test          # 25 tests, no network required
 
 Tests cover truncation, mention suppression, URL validation, secret redaction, the retry policy, and queue serialization. `fetch` is stubbed, so nothing is sent.
 
-## Not yet built
+## The browser half has no build step
 
-A settings-panel row (`settings.general.item`) for configuring targets from the dsh UI is specified in [`SPEC.md`](./SPEC.md) §20–25 but not implemented: it needs a browser bundle in dsh's lazy-CJS factory format, whose build preset is not published outside the dsh repo. Configuration currently happens through the credential store or the routes above.
+dsh's client bundles are lazy-CJS factory modules, and dsh builds its own with an in-repo `tsdown` preset that is **not published** outside the dsh repository. Rather than reproduce that toolchain, [`lib/client.js`](./lib/client.js) is hand-written in the target format: the factory wrapper verbatim, and `React.createElement` instead of JSX. There is nothing to compile — what the file says is what the browser runs — so `npm test` and a service restart are the whole edit loop.
+
+React and `@deepseek-ai/dsh-client-ui-primitives` are seeded by the shell's `require`; the row uses neither beyond React itself, and styles with inherited colour and translucent greys so it sits correctly in both the light and dark themes.
 
 ## License
 

@@ -4,6 +4,15 @@
   "description": "Discord webhook notifications for the DeepSeek Harness: named webhook targets the agent can call as a tool, with each URL held in the credential store instead of any config file.",
   "type": "module",
   "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "lib/",
     "cordis.patch.yml",
@@ -42,6 +51,9 @@
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
     }
   }
 }
